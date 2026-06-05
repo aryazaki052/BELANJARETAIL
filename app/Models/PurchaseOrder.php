@@ -9,7 +9,8 @@ class PurchaseOrder extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['store_id', 'total_amount'];
+    // PERBAIKAN: Menambahkan 'distributor_id' agar diizinkan masuk ke database oleh Laravel
+    protected $fillable = ['store_id', 'distributor_id', 'total_amount'];
 
     public function store()
     {
@@ -19,5 +20,10 @@ class PurchaseOrder extends Model
     public function items()
     {
         return $this->hasMany(PurchaseOrderItem::class);
+    }
+
+    public function distributor()
+    {
+        return $this->belongsTo(Distributor::class);
     }
 }

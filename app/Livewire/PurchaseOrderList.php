@@ -11,7 +11,7 @@ class PurchaseOrderList extends Component
 
     public function mount()
     {
-        $this->purchaseOrders = PurchaseOrder::with('store')->latest()->get();
+$this->purchaseOrders = PurchaseOrder::with(['store', 'distributor'])->latest()->get();
     }
 
     public function delete($id)

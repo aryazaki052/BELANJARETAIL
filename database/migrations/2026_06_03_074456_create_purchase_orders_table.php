@@ -14,7 +14,11 @@ return new class extends Migration
         Schema::create('purchase_orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('store_id')->constrained()->onDelete('cascade');
-            $table->decimal('total_amount', 15, 2);
+            
+            // JALUR AMAN: Pasang langsung di sini agar lahir bersamaan dengan tabelnya
+            $table->foreignId('distributor_id')->nullable()->constrained('distributors')->onDelete('set null');
+            
+            $table->decimal('total_amount', 15, 2)->default(0);
             $table->timestamps();
         });
     }

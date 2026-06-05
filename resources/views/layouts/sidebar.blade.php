@@ -58,8 +58,8 @@
             ADM
         </div>
         <div class="overflow-hidden">
-            <h4 class="text-xs font-bold text-white truncate">Administrator</h4>
-            <p class="text-[10px] text-gray-400 truncate">Finance Division</p>
+            <h4 class="text-xs font-bold text-white truncate">App Untuk</h4>
+            <p class="text-[10px] text-gray-400 truncate">Agus Kumis</p>
         </div>
     </div>
 

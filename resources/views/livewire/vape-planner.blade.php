@@ -7,7 +7,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
 
-            <div class="md:col-span-3">
+            <div class="md:col-span-2">
                 <label class="block text-xs font-bold text-gray-600 uppercase mb-1 tracking-wider">Pilih Toko</label>
                 <select wire:model="selectedStore" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none transition text-sm bg-white cursor-pointer font-medium text-gray-700">
                     @foreach($stores as $store)
@@ -15,8 +15,18 @@
                     @endforeach
                 </select>
             </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1 tracking-wider">Distribusi (Asal)</label>
+                <select wire:model="selectedDistributor" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none transition text-sm bg-white cursor-pointer font-medium text-gray-700">
+                    <option value="">-- Pilih Distributor --</option>
+                    @foreach($distributors as $distri)
+                        <option value="{{ $distri->id }}">{{ $distri->name }}</option>
+                    @endforeach
+                </select>
+            </div>
             
-            <div class="relative md:col-span-4">
+            <div class="relative md:col-span-3">
                 <label class="block text-xs font-bold text-gray-600 uppercase mb-1 tracking-wider">Ketik Nama Barang</label>
                 <input 
                     type="text" 
@@ -44,8 +54,8 @@
                 @endif
             </div>
 
-            <div class="md:col-span-2">
-                <label class="block text-xs font-bold text-gray-600 uppercase mb-1 tracking-wider">Harga Satuan</label>
+            <div class="md:col-span-1.5">
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1 tracking-wider">Harga</label>
                 <input 
                     type="text" 
                     value="Rp {{ number_format($selectedPrice ?? 0, 0, ',', '.') }}" 
@@ -58,19 +68,19 @@
                 <label class="block text-xs font-bold text-gray-600 uppercase mb-1 tracking-wider">Jumlah (Qty)</label>
                 <input 
                     type="number" 
-                    wire:model.live="qty" 
+                    wire:model.blur="qty" 
                     min="1"
                     class="w-full px-2 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none text-sm text-center font-bold bg-white text-gray-800"
                 />
             </div>
 
-            <div class="md:col-span-1.5 w-full">
+            <div class="md:col-span-2 w-full">
                 <button 
                     type="button" 
                     wire:click="addItemToList" 
                     class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-lg transition shadow-md text-center text-sm whitespace-nowrap flex items-center justify-center gap-1 active:scale-95"
                 >
-                    ➕ <span>Tambah</span>
+                    ➕ <span>Tambah Item</span>
                 </button>
             </div>
 

@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\Product;
 use App\Models\Store;
+use App\Models\Distributor; // Ditambahkan untuk data master distributor
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 
@@ -23,6 +24,10 @@ class VapePlanner extends Component
     public $stores = []; 
     public string|int $selectedStore = '';
 
+    // Properti untuk distributor (Fitur Baru)
+    public $distributors = [];
+    public string|int $selectedDistributor = '';
+
     // Properti untuk mode edit
     public ?int $editingPoId = null; 
 
@@ -35,14 +40,16 @@ class VapePlanner extends Component
 
     public function mount($id = null): void
     {
-        // Mengonversi data Store ke Array agar aman saat perpindahan jaringan lokal PC-HP
+        // Mengonversi data Store & Distributor ke Array / Collection agar aman di jaringan lokal
         $this->stores = Store::all();
+        $this->distributors = Distributor::all();
         
         if ($id) {
             $this->editingPoId = (int)$id;
             $po = PurchaseOrder::with('items')->findOrFail($id);
             /** @var PurchaseOrder $po */
             $this->selectedStore = $po->store_id;
+            $this->selectedDistributor = $po->distributor_id ?? ''; // Mengambil data distributor lama saat edit
             $this->grandTotal = $po->total_amount;
             $this->shoppingList = $po->items->map(function (PurchaseOrderItem $item) {
                 return [
@@ -56,6 +63,10 @@ class VapePlanner extends Component
         } else {
             if (empty($this->selectedStore) && count($this->stores) > 0) {
                 $this->selectedStore = $this->stores->first()->id;
+            }
+            // Set default distributor pertama jika form baru dibuka
+            if (empty($this->selectedDistributor) && count($this->distributors) > 0) {
+                $this->selectedDistributor = $this->distributors->first()->id;
             }
         }
     }
@@ -108,17 +119,24 @@ class VapePlanner extends Component
         }
     }
 
-    public function updatedQty(): void
+    // Perbaikan: Menambahkan parameter fallback agar jika Livewire mengirimkan data kosong tidak crash
+    public function updatedQty($value = null): void
     {
+        // Pastikan nilai qty minimal adalah 1 dan bertipe integer
+        $this->qty = $value ? (int)$value : 1;
         $this->calculateSubtotal();
     }
 
     public function calculateSubtotal(): void
     {
-        $this->subtotal = $this->selectedPrice * (int)$this->qty;
+        // PERBAIKAN: Menggunakan properti internal yang aman dari manipulasi request kosong
+        $currentQty = isset($this->qty) ? (int)$this->qty : 1;
+        $this->subtotal = $this->selectedPrice * $currentQty;
     }
 
-    // Fungsi untuk memasukkan barang yang dipilih ke list keranjang belanja bawah
+    // =========================================================================
+    // PERBAIKAN UTAMA: LOGIKA ANTI-DUPLIKAT BARANG PADA LIST BELANJA
+    // =========================================================================
     public function addItemToList(): void
     {
         if ($this->selectedPrice == 0 || empty($this->search) || empty($this->selectedStore)) {
@@ -128,17 +146,38 @@ class VapePlanner extends Component
         $store = Store::find($this->selectedStore);
         $storeName = $store ? $store->name : '';
 
-        $this->shoppingList[] = [
-            'store' => $storeName,
-            'name' => $this->search,
-            'price' => $this->selectedPrice,
-            'qty' => $this->qty,
-            'total' => $this->subtotal
-        ];
+        $isDuplicated = false;
 
-       $this->search = '';
+        // Looping untuk mencari apakah nama barang yang diinput sudah ada di keranjang bawah
+        foreach ($this->shoppingList as $index => $item) {
+            if (strcasecmp($item['name'], $this->search) === 0) {
+                // Jika ketemu barang kembar, akumulasikan Qty lama + Qty baru
+                $newQty = $this->shoppingList[$index]['qty'] + (int)$this->qty;
+                $this->shoppingList[$index]['qty'] = $newQty;
+                
+                // Hitung ulang subtotal harga baris tersebut
+                $this->shoppingList[$index]['total'] = $this->shoppingList[$index]['price'] * $newQty;
+                
+                $isDuplicated = true;
+                break;
+            }
+        }
+
+        // Jika barang belum pernah ada di list bawah, barulah masukkan sebagai baris baru
+        if (!$isDuplicated) {
+            $this->shoppingList[] = [
+                'store' => $storeName,
+                'name' => $this->search,
+                'price' => $this->selectedPrice,
+                'qty' => (int)$this->qty,
+                'total' => $this->subtotal
+            ];
+        }
+
+        // Reset form input atas agar kosong kembali
+        $this->search = '';
         $this->selectedPrice = 0;
-        $this->qty = (int) 1; // Ditambahkan casting murni (int) agar tipenya stabil di Livewire v3
+        $this->qty = (int) 1; 
         $this->subtotal = 0;
 
         $this->calculateGrandTotal();
@@ -167,6 +206,7 @@ class VapePlanner extends Component
             $po = PurchaseOrder::findOrFail($this->editingPoId);
             $po->update([
                 'store_id' => $this->selectedStore,
+                'distributor_id' => !empty($this->selectedDistributor) ? $this->selectedDistributor : null, // UPDATE ID DISTRIBUTOR
                 'total_amount' => $this->grandTotal,
             ]);
 
@@ -183,6 +223,7 @@ class VapePlanner extends Component
         } else {
             $po = PurchaseOrder::create([
                 'store_id' => $this->selectedStore,
+                'distributor_id' => !empty($this->selectedDistributor) ? $this->selectedDistributor : null, // SIMPAN ID DISTRIBUTOR BARU
                 'total_amount' => $this->grandTotal,
             ]);
 
@@ -199,6 +240,7 @@ class VapePlanner extends Component
 
         $this->shoppingList = [];
         $this->grandTotal = 0;
+        $this->selectedDistributor = '';
         $this->editingPoId = null;
 
         return redirect()->route('purchase-orders.index');

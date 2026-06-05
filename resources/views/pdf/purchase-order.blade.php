@@ -26,7 +26,8 @@
 
     <div class="header">
         <h1>Purchase Order</h1>
-        <p>PO #{{ $po->id }}</p>
+        <!-- Menandai judul versi di atas kertas agar tidak membingungkan orang gudang -->
+        <p>PO #{{ $po->id }} {{ $type == 'gudang' ? '(Versi Gudang / Packing)' : '' }}</p>
     </div>
 
     <div class="details">
@@ -45,8 +46,12 @@
             <tr>
                 <th>Nama Barang</th>
                 <th class="text-center">Qty</th>
-                <th class="text-right">Harga Satuan</th>
-                <th class="text-right">Total</th>
+                
+                <!-- Tampilkan header harga & total hanya jika versinya 'lengkap' -->
+                @if($type == 'lengkap')
+                    <th class="text-right">Harga Satuan</th>
+                    <th class="text-right">Total</th>
+                @endif
             </tr>
         </thead>
         <tbody>
@@ -54,21 +59,28 @@
                 <tr>
                     <td>{{ $item->name }}</td>
                     <td class="text-center">{{ $item->quantity }}</td>
-                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
+                    
+                    <!-- Tampilkan isi kolom harga & total hanya jika versinya 'lengkap' -->
+                    @if($type == 'lengkap')
+                        <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                        <td class="text-right">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
+                    @endif
                 </tr>
             @endforeach
         </tbody>
     </table>
 
-    <div class="total">
-        <table>
-            <tr>
-                <th>Grand Total:</th>
-                <td class="grand-total text-right">Rp {{ number_format($po->total_amount, 0, ',', '.') }}</td>
-            </tr>
-        </table>
-    </div>
+    <!-- Kotak Grand Total di bawah ini hanya akan muncul pada dokumen versi Finance ('lengkap') -->
+    @if($type == 'lengkap')
+        <div class="total">
+            <table>
+                <tr>
+                    <th>Grand Total:</th>
+                    <td class="grand-total text-right">Rp {{ number_format($po->total_amount, 0, ',', '.') }}</td>
+                </tr>
+            </table>
+        </div>
+    @endif
 
 </body>
 </html>
